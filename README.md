@@ -20,7 +20,7 @@ Explanation
 - #### GMO Blockchain Open Source
     http://guide.blockchain.z.com/docs/oss/
 
-- #### Swap Trade
+- #### Token Trader
     http://guide.blockchain.z.com/docs/oss/token-trader/
 
 Usage Guides
