@@ -1,0 +1,182 @@
+{
+    "common": {
+        "page": {
+            "index": "HOME",
+            "issue": "ISSUE TOKEN",
+            "trade": "TRADE TOKEN"
+        },
+        "content": {
+            "select": "SELECT...",
+            "demo-explain": "In this demonstration, in order to make it easy to grasp the essence of direct trade between traders, we implement only very simple selling orders and buying trade.\n\nImplementation of buying orders and selling trade, and visualization of graphs etc. are considered to be easy to implement based on this demo.\n\nLikewise, because of the demonstration, we use local storage for data storage."
+        },
+        "caption": {
+            "issuer": {
+                "title": "Issuer"
+            },
+            "indexer": {
+                "title": "Indexer"
+            },
+            "trader": {
+                "title": "Trader",
+                "a": "Trader-A",
+                "b": "Trader-B"
+            },
+            "token": {
+                "name": "Token Name",
+                "symbol": "Token Symbol",
+                "supply": "Token Supply",
+                "from": "From Token",
+                "to": "To Token"
+            },
+            "balance": {
+                "title": "Balance"
+            },
+            "amount": {
+                "title": "Amount"
+            },
+            "board": {
+                "title": "SELL ORDERS"
+            },
+            "order": {
+                "sell": "SELL",
+                "price": "PRICE",
+                "cancel": "CANCEL",
+                "buy": "BUY"
+            },
+            "possession": {
+                "you-have": "You Have",
+                "allowance": "Trade Allowance",
+                "on-order": "On Order",
+                "tradable": "Tradable Amount"
+            }
+        }
+    },
+    "index": {
+        "title": "SELECT MENU"
+    },
+    "issue": {
+        "content": {
+        },
+        "form": {
+            "send-token": {
+                "title": "SEND TOKEN",
+                "submit": "SEND"
+            },
+            "create-token": {
+                "description": "Create new token for DEMO",
+                "submit": "CREATE TOKEN"
+            }
+        },
+        "dialog": {
+            "token-created": {
+                "title": "Token Created",
+                "msg": "Token created successfully."
+            },
+            "send-confirm": {
+                "title": "Send Confirm",
+                "msg": "Send tokens?"
+            },
+            "send-complete": {
+                "title": "Transaction Accepted",
+                "msg": "The transaction to send tokens is submitted to the ethereum network.\nUpdating the account balance may take half a minute\n(until mined on the blockchain)"
+            },
+            "err-no-account": {
+                "title": "No Accounts Registered",
+                "msg": "DEMO accounts have not been registered.\nDid you create following accounts on your local storage?\n\n* Issuer Account\n* Indexer Account\n* Trader-A Account\n* Trader-B Account"
+            },
+            "err-token-name-too-long": {
+                "title": "Input Error",
+                "msg": "Token name's length must be 32bytes or less."
+            },
+            "err-required": {
+                "title": "Input Error",
+                "msg": "There are missing input items."
+            },
+            "err-invalid-supply": {
+                "title": "Not Number",
+                "msg": "Token Supply must be number."
+            },
+            "err-invalid-amount": {
+                "title": "Not Number",
+                "msg": "Amount must be number."
+            }
+        }
+    },
+    "trade": {
+        "content": {
+        },
+        "form": {
+            "set-allowance": {
+                "title": "Set Trade Allowance"
+            },
+            "sell-token": {
+                "submit": "Sell"
+            },
+            "buy-token": {
+                "submit": "BUY"
+            }
+        },
+        "dialog": {
+            "err-self-trade": {
+                "title": "Self Trade",
+                "msg": "This selling record is trader's own record."
+            },
+            "err-no-account": {
+                "title": "No token Registered",
+                "msg": "Issue token in advance."
+            },
+            "err-lack-token": {
+                "title": "Lack Token",
+                "msg": "If you want to do a DEMO trade, you have to create 2 or more tokens."
+            },
+            "err-required": {
+                "title": "Not Input",
+                "msg": "Input value is required."
+            },
+            "err-not-number": {
+                "title": "Not Number",
+                "msg": "A positive number is required."
+            },
+            "err-not-int": {
+                "title": "Not Integer",
+                "msg": "Trade target token volume must be set as a integer number."
+            },
+            "err-trade": {
+                "title": "Trade Error",
+                "msg": "Failed to trade. Check parameters please."
+            },
+            "err-allowance-short": {
+                "title": "Allowance Shortage",
+                "msg": "You can not set a trade allowance that is less than the amount of On Order."
+            },
+            "allowance-complete": {
+                "title": "Allowance Transaction Accepted",
+                "msg": "Sending allowance transaction is submitted to ethereum network.\nUpdating the account balance may take half a minute\n(until mined on the blockchain)"
+            },
+            "err-over-remain": {
+                "title": "Over Sales Volume",
+                "msg": "The specified number exceeds the sales volume."
+            },
+            "err-tradable-shortage": {
+                "title": "Shortage Amount",
+                "msg": "There is insufficient tradable amount.\n\nIncrease trade allowance and adjust tradable amount."
+            },
+            "err-tradable-taker-shortage": {
+                "title": "Shortage Trade Allowance",
+                "msg": "There is insufficient tradable amount for buying.\n\nIncrease trade allowance and adjust tradable amount."
+            },
+            "err-tradable-maker-shortage": {
+                "title": "Maker Shortage Amount",
+                "msg": "There is insufficient tradable amount for selling.\n\nCancellation of this transaction and this selling record will be carried out."
+            },
+            "trade-info-written": {
+                "title": "On Order",
+                "msg": "Trading information was on sell order."
+            },
+            "trade-complete": {
+                "title": "Trade Transaction Accepted",
+                "msg": "Trade transaction is submitted to ethereum network.\nUpdating the account balance may take half a minute\n(until mined on the blockchain)"
+            }
+        }
+    }
+}

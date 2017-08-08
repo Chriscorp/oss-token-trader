@@ -1,0 +1,13 @@
+{
+    "jwolfe.file-tree-exclude.list": [
+        "Thumbs.db",
+        "node_modules",
+        "bower_components",
+        "*.bak",
+        ".git",
+        ".gitmodules",
+        ".gitignore",
+        "dist",
+        "vendor"
+    ]
+}
