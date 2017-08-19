@@ -71,10 +71,11 @@ contract TokenSample is TokenInterface {
         hash = sha3(hash, _nonce);
         address from = recoverAddress(hash, _sign);
 
-        if (_nonce != nonces[from]) return false;
-        nonces[from]++;
-
-        return transferInternal(from, _to, _amount);
+        if (_nonce == nonces[from] && transferInternal(from, _to, _amount)) {
+            nonces[from]++;
+            return true;
+        }
+        return false;
     }
 
     function transferInternal(address _from, address _to, uint _amount) private returns (bool success) {
@@ -100,10 +101,11 @@ contract TokenSample is TokenInterface {
         hash = sha3(hash, _nonce);
         address from = recoverAddress(hash, _sign);
 
-        if (_nonce != nonces[from]) return false;
-        nonces[from]++;
-
-        return approveInternal(from, _spender, _amount);
+        if (_nonce == nonces[from] && approveInternal(from, _spender, _amount)) {
+            nonces[from]++;
+            return true;
+        }
+        return false;
     }
 
     function approveInternal(address _from, address _spender, uint _amount) private returns (bool success) {
