@@ -67,7 +67,7 @@ See [Contract Creation Process](https://guide.blockchain.z.com/docs/dapp/contrac
 
 
 ### Configure for client
-Create server/public/js/config.json based on server/public/js/config_template.json. Edit "CNS_ADDRESS" and "TOKEN_TRADER_ADDRESS" which you deployed.
+Create server/public/js/config.js based on server/public/js/config_template.js. Edit "CNS_ADDRESS" and "TOKEN_TRADER_ADDRESS" which you deployed.
 
 - #### Put TOKEN_TRADER_ADDRESS of config
   1. Open following files
