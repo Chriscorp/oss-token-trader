@@ -43,6 +43,10 @@ node server/create_admin_account.js
 ```
 
 ### Deploy contracts
+* Attention  
+  At September 1, 2017, truffle should be used at version 3.4.5.  
+  (There is a bug in web3.js related with truffle version 3.4.6 or later, and the deployment does not work properly.)  
+  https://github.com/ethereum/web3.js/issues/990
 ```bash
 cd oss-token-trader/provider
 truffle migrate
