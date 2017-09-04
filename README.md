@@ -36,12 +36,6 @@ cd oss-token-trader/server
 npm install
 ```
 
-### Create admin account
-```bash
-cd oss-token-trader
-node server/create_admin_account.js
-```
-
 ### Deploy contracts
 * Attention  
   At September 1, 2017, truffle should be used at version 3.4.5.  
