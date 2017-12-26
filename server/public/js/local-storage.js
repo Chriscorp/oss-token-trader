@@ -5,6 +5,7 @@ var _indexerAccountKey = 'token-trader.indexer';
 var _traderAAccountKey = 'token-trader.trader-a';
 var _traderBAccountKey = 'token-trader.trader-b';
 var _tokensKey = 'token-trader.tokens';
+var _erc721TokensKey = 'token-trader.erc721Tokens';
 var _conditionKey = 'token-trader.condition';
 var _boardNextIdKey = 'token-trader.board.next-id';
 var _boardKey = 'token-trader.board';
@@ -43,6 +44,12 @@ LOCAL_STORAGE.getTokens = function () {
 };
 LOCAL_STORAGE.setTokens = function (_jsonValue) {
     localStorage.setItem(_tokensKey, JSON.stringify(_jsonValue));
+};
+LOCAL_STORAGE.getERC721Tokens = function () {
+    return JSON.parse(localStorage.getItem(_erc721TokensKey));
+};
+LOCAL_STORAGE.setERC721Tokens = function (_jsonValue) {
+    localStorage.setItem(_erc721TokensKey, JSON.stringify(_jsonValue));
 };
 LOCAL_STORAGE.getCondition = function () {
     return JSON.parse(localStorage.getItem(_conditionKey));

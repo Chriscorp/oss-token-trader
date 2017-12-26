@@ -132,7 +132,25 @@
         <div id="token-area" class="container" style="display:none;">
 
             <!-- possession-area -->
-            <div class="row centered bottom-space-form-thin">
+            <div id="erc721-posession" class="row centered bottom-space-form-thin">
+                <div class="table-center list-table-simple">
+                    <div class="row">
+                        <div class="title" demo-msg="common.caption.token.symbol"></div>
+                        <div class="title" demo-msg="common.caption.erc721-possession.you-have"></div>
+                        <div class="title" demo-msg="common.caption.erc721-possession.allowance"></div>
+                        <div class="title" demo-msg="common.caption.erc721-possession.on-order"></div>
+                    </div>
+                    <div class="row" id="from-erc721" style="display: none;">
+                        <div id="from-erc721-symbol"></div>
+                        <div id="from-erc721-you-have"></div>
+                        <div><a id="from-erc721-allowance" onclick="erc721Allowance()" style="text-decoration: underline; cursor:pointer;">-</a></div>
+                        <div id="from-erc721-on-order"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- possession-area -->
+            <div id="erc20-posession" class="row centered bottom-space-form-thin">
                 <div class="table-center list-table-simple">
                     <div class="row">
                         <div class="title" demo-msg="common.caption.token.symbol"></div>
@@ -141,7 +159,7 @@
                         <div class="title" demo-msg="common.caption.possession.on-order"></div>
                         <div class="title" demo-msg="common.caption.possession.tradable"></div>
                     </div>
-                    <div class="row">
+                    <div class="row" id="from-erc20" style="display: none;">
                         <div id="from-token-symbol"></div>
                         <div id="from-token-you-have"></div>
                         <div>
@@ -184,13 +202,19 @@
                     <div>Price</div>
                     <div><input class="form-control" id="price" maxlength="18" placeholder="1.000" style="width: 220px;text-align: right;" onkeyup="changePrice()"></div>
                 </div>
-                <div class="row">
+                <div class="row" id="amount-row" style="display: none;">
                     <div>Amount</div>
                     <div><input class="form-control" id="amount" maxlength="18" placeholder="100000" style="width: 220px;text-align: right;" onkeyup="changeAmount()"></div>
                 </div>
-                <div class="row">
+                <div class="row" id="total-row" style="display: none;">
                     <div>Total</div>
                     <div><input class="form-control" id="total" maxlength="18" placeholder="100000" style="width: 220px;text-align: right;" onkeyup="changeTotal()" onfocus="focusTotal()" onblur="blurTotal()"></div>
+                </div>
+                <div class="row" id="token-id-row" style="display: none;">
+                    <div>Token Id</div>
+                    <div><select class="form-control" id="token-id">
+                        <option value="" demo-msg="common.content.select"></option>
+                    </select></div>
                 </div>
             </div>
             <div class="table-center top-space input-table">
@@ -230,6 +254,7 @@
                             <div name="to-token-volume" style="width:140px">------</div>
                             <div>
                                 <button name="trade" onclick="trade(this)" class="btn btn-warning btn-lg" demo-msg="trade.form.buy-token.submit">&nbsp;</button>
+                                <button name="erc721-trade" onclick="erc721Trade(this)" class="btn btn-warning btn-lg" demo-msg="trade.form.buy-token.submit">&nbsp;</button>
                                 <button name="cancel" onclick="cancelRecord(this)" class="btn btn-warning btn-lg" demo-msg="common.caption.order.cancel" style="display: none">&nbsp;</button>
                             </div>
                         </div>
@@ -237,6 +262,7 @@
                 </div>
             </div>
         </div>
+
 
         <!-- Bootstrap core JavaScript ================================================== -->
         <!-- Placed at the end of the document so the pages load faster -->

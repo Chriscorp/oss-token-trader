@@ -42,9 +42,6 @@ $(document).ready(function() {
         LOCAL_STORAGE.setTokens(tokens);
     }
 
-    if (Object.keys(tokens).length > 0) {
-        $('#token-list-area').css('display', 'block');
-    }
     var tokenRow = [];
     for (var tokenAddr in tokens) {
         tokenRow.push({addr: tokenAddr, token:tokens[tokenAddr]});
@@ -53,6 +50,8 @@ $(document).ready(function() {
         return a.token.simbol > b.token.simbol;
     });
     tokenRow.forEach(function(obj, idx, array) {
+        if (obj.token.erc721) $('#erc721-list-area').css('display', 'block');
+        else $('#token-list-area').css('display', 'block');
         appendToken(obj.addr, obj.token);
     });
     for (var i = 0; i < tokenRow.length; i++) {
@@ -72,8 +71,7 @@ var registerAccount = function(account, callback) {
 
 var appendToken = function(tokenAddr, token) {
     var contract = ETH_UTIL.getContract(LOCAL_STORAGE.getIssuerAccount());
-    var getBalanceCallback =
-        function(err, res) {
+    var getBalanceCallback = function(err, res) {
             if (err) {
                 console.error(err);
                 alert('Failed to get Token balance information.');
@@ -90,10 +88,100 @@ var appendToken = function(tokenAddr, token) {
             tokenRow.find('div[name="token-symbol"]').text(token.symbol);
             tokenRow.find('div[name="token-name"]').text(token.name);
             tokenRow.find('div[name="balance"]').text(res.toString(10));
-            $('#token-list').append(tokenRow);
+            if (!token.erc721) {
+                $('#token-list').append(tokenRow);
+                tokenRow.find('#erc20-form').css('display', 'block');
+                return;
+            }
+            $('#erc721-list').append(tokenRow);
+            tokenRow.find('button[name="create-erc721-button"]').css('display', 'block');
+            tokenRow.find('#erc721-form').css('display', 'block');
+            var getERC721TokenCallback = function(err, res) {
+                if (err) {
+                    console.error(err);
+                    alert('Failed to get Tokens.');
+                    return;
+                }
+                var tokenIds = tokenRow.find('select[name="token-id"]');
+                res[0].forEach(function(r) {
+                    tokenIds.append($('<option>').val(r.toString(10)).text(r.toString(10)));
+                });
+            };
+            contract.call('', 'SwapTrade', 'getERC721Tokens', [tokenAddr, LOCAL_STORAGE.getIssuerAccount().getAddress()], SWAP_TRADE_ABI, getERC721TokenCallback);
         };
-    contract.call('', 'SwapTrade', 'getBalance', [tokenAddr, LOCAL_STORAGE.getIssuerAccount().getAddress()], SWAP_TRADE_ABI, getBalanceCallback);
+    var getBalanceFunction = token.erc721? 'getERC721Balance' : 'getBalance';
+    contract.call('', 'SwapTrade', getBalanceFunction, [tokenAddr, LOCAL_STORAGE.getIssuerAccount().getAddress()], SWAP_TRADE_ABI, getBalanceCallback);
 };
+
+var createERC721Token = function(button) {
+    if (DEMO_UTIL.isLoading()) return;
+
+    var row = $(button.closest('div[name="token-row"]'));
+    var tokenAddress = row.find('input[name="token-address"]').val().trim();
+
+    // validate(very simple for DEMO)
+    if (!tokenAddress) {
+        DEMO_UTIL.okDialog(
+            demoMsg('issue.dialog.err-required.title'),
+            demoMsg('issue.dialog.err-required.msg')
+        );
+        return;
+    }
+
+    var contract = ETH_UTIL.getContract(LOCAL_STORAGE.getIssuerAccount());
+    DEMO_UTIL.confirmDialog(
+        demoMsg("issue.dialog.create-one-token-confirm.title"),
+        demoMsg("issue.dialog.create-one-token-confirm.msg"),
+        function() {
+            $(this).dialog("close");
+            if (!DEMO_UTIL.startLoad()) return;
+
+            contract.call('', 'Demo', 'getNonce', [tokenAddress, LOCAL_STORAGE.getIssuerAccount().getAddress()], DEMO_ABI,
+                function(err, res) {
+                    // get nonce
+                    if (err) {
+                        console.error(err);
+                        alert('Failed to get Token nonce information.');
+                        return DEMO_UTIL.stopLoad();
+                    }
+
+                    console.log(res);
+                    var nonce = res.toString(10);
+                    LOCAL_STORAGE.getIssuerAccount().sign('', ethClient.utils.hashBySolidityType(['address', 'bytes32', 'uint', 'uint'], [tokenAddress, 'createWithSign', 1, nonce]),
+                        function(err, sign) {
+                            // sign request
+                            if (err) {
+                                console.error(err);
+                                alert('Failed to sign oarams.');
+                                return DEMO_UTIL.stopLoad();
+                            }
+                            contract.sendTransaction('', 'Demo', 'createERC721Token', [tokenAddress, 1, nonce, sign], DEMO_ABI,
+                                // send token
+                                function(err, res) {
+                                    if (err) {
+                                        console.error(err);
+                                        alert('Failed to sennd Token.');
+                                        return DEMO_UTIL.stopLoad();
+                                    }
+
+                                    console.log(res);
+                                    DEMO_UTIL.okDialog(
+                                        demoMsg("issue.dialog.create-one-token-complete.title"),
+                                        demoMsg("issue.dialog.create-one-token-complete.msg"),
+                                        function() {
+                                            window.location.href = './issue.html';
+                                        }
+                                    );
+                                    return DEMO_UTIL.stopLoad();
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
+}
 
 /* send token */
 var sendToken = function (button) {
@@ -174,7 +262,79 @@ var sendToken = function (button) {
             );
         }
     );
+};
 
+var sendERC721Token = function (button) {
+    if (DEMO_UTIL.isLoading()) return;
+
+    var row = $(button.closest('div[name="token-row"]'));
+    var tokenAddress = row.find('input[name="token-address"]').val().trim();
+    var toAddress = row.find('#erc721-form').find('select[name="to-address"]').val().trim();
+    var tokenId = row.find('#erc721-form').find('select[name="token-id"]').val().trim();
+
+    // validate(very simple for DEMO)
+    if (!tokenAddress || !toAddress || !tokenId) {
+        DEMO_UTIL.okDialog(
+            demoMsg('issue.dialog.err-required.title'),
+            demoMsg('issue.dialog.err-required.msg')
+        );
+        return;
+    }
+
+    // send
+    var contract = ETH_UTIL.getContract(LOCAL_STORAGE.getIssuerAccount());
+    DEMO_UTIL.confirmDialog(
+        demoMsg("issue.dialog.send-confirm.title"),
+        demoMsg("issue.dialog.send-confirm.msg"),
+        function() {
+            $(this).dialog("close");
+            if (!DEMO_UTIL.startLoad()) return;
+
+            contract.call('', 'Demo', 'getNonce', [tokenAddress, LOCAL_STORAGE.getIssuerAccount().getAddress()], DEMO_ABI,
+                function(err, res) {
+                    // get nonce
+                    if (err) {
+                        console.error(err);
+                        alert('Failed to get Token nonce information.');
+                        return DEMO_UTIL.stopLoad();
+                    }
+
+                    console.log(res);
+                    var nonce = res.toString(10);
+                    LOCAL_STORAGE.getIssuerAccount().sign('', ethClient.utils.hashBySolidityType(['address', 'bytes32', 'address', 'uint', 'uint'], [tokenAddress, 'transferWithSign', toAddress, tokenId, nonce]),
+                        function(err, sign) {
+                            // sign request
+                            if (err) {
+                                console.error(err);
+                                alert('Failed to sign oarams.');
+                                return DEMO_UTIL.stopLoad();
+                            }
+                            contract.sendTransaction('', 'Demo', 'sendERC721Token', [tokenAddress, toAddress, tokenId, nonce, sign], DEMO_ABI,
+                                // send token
+                                function(err, res) {
+                                    if (err) {
+                                        console.error(err);
+                                        alert('Failed to sennd Token.');
+                                        return DEMO_UTIL.stopLoad();
+                                    }
+
+                                    console.log(res);
+                                    DEMO_UTIL.okDialog(
+                                        demoMsg("issue.dialog.send-complete.title"),
+                                        demoMsg("issue.dialog.send-complete.msg"),
+                                        function() {
+                                            window.location.href = './issue.html';
+                                        }
+                                    );
+                                    return DEMO_UTIL.stopLoad();
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+    );
 };
 
 /* create token */
@@ -236,6 +396,74 @@ var createToken = function() {
                 console.log(tokenAddr);
                 var tokens = LOCAL_STORAGE.getTokens();
                 tokens[tokenAddr] = {
+                    symbol: tokenSymbol,
+                    name: tokenName
+                };
+                LOCAL_STORAGE.setTokens(tokens);
+                DEMO_UTIL.okDialog(
+                    demoMsg("issue.dialog.token-created.title"),
+                    demoMsg("issue.dialog.token-created.msg"),
+                    function() {
+                        window.location.href = './issue.html';
+                    }
+                );
+                return DEMO_UTIL.stopLoad();
+            });
+        }
+    );
+};
+
+var createERC721TokenContract = function() {
+    if (DEMO_UTIL.isLoading()) return;
+    if (!DEMO_UTIL.startLoad()) return;
+
+    var tokenSymbol = $('#erc721-symbol').val().trim();
+    var tokenName = $('#erc721-name').val().trim();
+
+    // validate(very simple for DEMO)
+    if (!tokenSymbol || !tokenName) {
+        DEMO_UTIL.okDialog(
+            demoMsg('issue.dialog.err-required.title'),
+            demoMsg('issue.dialog.err-required.msg')
+        );
+        return DEMO_UTIL.stopLoad();
+    }
+    var tokenNameHex = ETH_UTIL.fromUtf8(tokenName);
+    if (tokenNameHex.length > 66) {
+        DEMO_UTIL.okDialog(
+            demoMsg("issue.dialog.err-token-name-too-long.title"),
+            demoMsg("issue.dialog.err-token-name-too-long.msg")
+        );
+        return DEMO_UTIL.stopLoad();
+    }
+    var tokenSymbolHex = ETH_UTIL.fromUtf8(tokenName);
+    if (tokenSymbolHex.length > 66) {
+        alert('token symbole length is too long');
+        return;
+    }
+
+    // create
+    var contract = ETH_UTIL.getContract(LOCAL_STORAGE.getIssuerAccount());
+    contract.sendTransaction('', 'Demo', 'createERC721TokenContract', [tokenSymbolHex, tokenNameHex], DEMO_ABI,
+        function(err, res) {
+            if (err) {
+                console.error(err);
+                alert('error! check console!');
+                return DEMO_UTIL.stopLoad();
+            }
+            console.log(res);
+            var getTokenContractAddress = function(txHash, callback) {
+                contract.getTransactionReceipt(txHash, function(err, res) {
+                    if (err) callback(err);
+                    else if (res) callback(null, '0x' + res.logs[0].data.substr(-40));
+                    else setTimeout(function() { getTokenContractAddress(txHash, callback); }, 5000);
+                });
+            };
+            getTokenContractAddress(res, function(err, tokenAddr) {
+                console.log(tokenAddr);
+                var tokens = LOCAL_STORAGE.getTokens();
+                tokens[tokenAddr] = {
+                    erc721: 1,
                     symbol: tokenSymbol,
                     name: tokenName
                 };

@@ -12,19 +12,19 @@ contract TokenTrader {
 
     function trade(
         address _makerTokenAddr, uint _makerAmount, address _makerAddress, address _takerTokenAddr, uint _takerAmount,
-        uint _expiration, uint _tradeNonce, bytes _takerSign, bytes _makerSign) returns (bool success) {
+        uint _expiration, uint _tradeNonce, bytes _takerSign, bytes _makerSign) public returns (bool success) {
 
         bytes32 hash = calcEnvHash('trade');
-        hash = sha3(hash, _makerTokenAddr);
-        hash = sha3(hash, _makerAmount);
-        hash = sha3(hash, _makerAddress);
-        hash = sha3(hash, _takerTokenAddr);
-        hash = sha3(hash, _takerAmount);
-        hash = sha3(hash, _expiration);
-        hash = sha3(hash, _tradeNonce);
+        hash = keccak256(hash, _makerTokenAddr);
+        hash = keccak256(hash, _makerAmount);
+        hash = keccak256(hash, _makerAddress);
+        hash = keccak256(hash, _takerTokenAddr);
+        hash = keccak256(hash, _takerAmount);
+        hash = keccak256(hash, _expiration);
+        hash = keccak256(hash, _tradeNonce);
         address takerAddress = recoverAddress(hash, _takerSign);
 
-        hash = sha3(hash, _takerSign);
+        hash = keccak256(hash, _takerSign);
         address makerAddress = recoverAddress(hash, _makerSign);
 
         if (makerAddress != _makerAddress || _tradeNonce != getNonce(makerAddress, takerAddress) || _expiration < now) return false;
@@ -34,12 +34,12 @@ contract TokenTrader {
         return true;
     }
 
-    function calcEnvHash(bytes32 _functionName) constant returns (bytes32 hash) {
-        hash = sha3(this);
-        hash = sha3(hash, _functionName);
+    function calcEnvHash(bytes32 _functionName) internal constant returns (bytes32 hash) {
+        hash = keccak256(this);
+        hash = keccak256(hash, _functionName);
     }
 
-    function recoverAddress(bytes32 _hash, bytes _sign) constant returns (address recoverdAddr) {
+    function recoverAddress(bytes32 _hash, bytes _sign) internal constant returns (address recoverdAddr) {
         bytes32 r;
         bytes32 s;
         uint8 v;
