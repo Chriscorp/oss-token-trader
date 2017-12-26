@@ -28,6 +28,13 @@
                 "from": "交換元",
                 "to": "交換先"
             },
+            "erc721": {
+                "name": "トークン名",
+                "symbol": "シンボル",
+                "supply": "供給量",
+                "from": "交換元",
+                "to": "交換先"
+            },
             "balance": {
                 "title": "残高"
             },
@@ -48,6 +55,12 @@
                 "allowance": "トレード許容量",
                 "on-order": "販売中",
                 "tradable": "トレード利用可能量"
+            },
+            "erc721-possession": {
+                "you-have": "保有中",
+                "allowance": "許容中",
+                "on-order": "販売中",
+                "tradable": "トレード可能"
             }
         }
     },
@@ -59,12 +72,24 @@
         },
         "form": {
             "send-token": {
-                "title": "トークン送信",
+                "title": "ERC20トークン送信",
                 "submit": "送信"
             },
             "create-token": {
-                "description": "デモ用に新しいトークンを発行",
-                "submit": "トークン発行"
+                "description": "デモ用に新しいERC20トークンを発行",
+                "submit": "ERC20トークン発行"
+            },
+            "send-erc721": {
+                "title": "ERC721トークン送信",
+                "submit": "送信"
+            },
+            "create-erc721": {
+                "description": "デモ用に新しいERC721トークンを発行",
+                "submit": "ERC721トークン発行"
+            },
+            "create-one-token": {
+                "description": "トークン1枚発行",
+                "submit": "発行"
             }
         },
         "dialog": {
@@ -76,7 +101,15 @@
                 "title": "送信確認",
                 "msg": "トークンの送信を行いますか？"
             },
+            "create-one-token-confirm": {
+                "title": "発行確認",
+                "msg": "トークン1枚を発行しますか？"
+            },
             "send-complete": {
+                "title": "トランザクション受領",
+                "msg": "トークン送信トランザクションをEthereumネットワークにポストしました。\n残高の反映には数十秒かかる場合があります。\n(マイニング完了まで)"
+            },
+            "create-one-token-complete": {
                 "title": "トランザクション受領",
                 "msg": "トークン送信トランザクションをEthereumネットワークにポストしました。\n残高の反映には数十秒かかる場合があります。\n(マイニング完了まで)"
             },

@@ -31,22 +31,22 @@ contract TokenSample is TokenInterface {
         totalTokens = _supplyVolume;
     }
 
-    function totalSupply() constant returns (uint totalSupply) {
+    function totalSupply() public constant returns (uint totalSupply) {
         return totalTokens;
     }
 
     // What is the balance of a particular account?
-    function nonceOf(address _owner) constant returns (uint nonce) {
+    function nonceOf(address _owner) public constant returns (uint nonce) {
         return nonces[_owner];
     }
 
     // What is the balance of a particular account?
-    function balanceOf(address _owner) constant returns (uint balance) {
+    function balanceOf(address _owner) public constant returns (uint balance) {
         return balances[_owner];
     }
 
     // Transfer the balance from owner's account to another account
-    function transfer(address _to, uint _amount) returns (bool success) {
+    function transfer(address _to, uint _amount) public returns (bool success) {
         return transferInternal(msg.sender, _to, _amount);
     }
 
@@ -56,7 +56,7 @@ contract TokenSample is TokenInterface {
     // fees in sub-currencies; the command should fail unless the _from account has
     // deliberately authorized the sender of the message via some mechanism; we propose
     // these standardized APIs for approval:
-    function transferFrom(address _from, address _to, uint _amount) returns (bool success) {
+    function transferFrom(address _from, address _to, uint _amount) public returns (bool success) {
         if (allowed[_from][msg.sender] >= _amount && transferInternal(_from, _to, _amount)) {
             allowed[_from][msg.sender] -= _amount;
             return true;
@@ -64,11 +64,11 @@ contract TokenSample is TokenInterface {
         return false;
     }
 
-    function transferWithSign(address _to, uint _amount, uint _nonce, bytes _sign) returns (bool success) {
+    function transferWithSign(address _to, uint _amount, uint _nonce, bytes _sign) public returns (bool success) {
         bytes32 hash = calcEnvHash('transferWithSign');
-        hash = sha3(hash, _to);
-        hash = sha3(hash, _amount);
-        hash = sha3(hash, _nonce);
+        hash = keccak256(hash, _to);
+        hash = keccak256(hash, _amount);
+        hash = keccak256(hash, _nonce);
         address from = recoverAddress(hash, _sign);
 
         if (_nonce == nonces[from] && transferInternal(from, _to, _amount)) {
@@ -90,15 +90,15 @@ contract TokenSample is TokenInterface {
 
     // Allow _spender to withdraw from your account, multiple times, up to the _value amount.
     // If this function is called again it overwrites the current allowance with _value.
-    function approve(address _spender, uint _amount) returns (bool success) {
+    function approve(address _spender, uint _amount) public returns (bool success) {
         return approveInternal(msg.sender, _spender, _amount);
     }
 
-    function approveWithSign(address _spender, uint _amount, uint _nonce, bytes _sign) returns (bool success) {
+    function approveWithSign(address _spender, uint _amount, uint _nonce, bytes _sign) public returns (bool success) {
         bytes32 hash = calcEnvHash('approveWithSign');
-        hash = sha3(hash, _spender);
-        hash = sha3(hash, _amount);
-        hash = sha3(hash, _nonce);
+        hash = keccak256(hash, _spender);
+        hash = keccak256(hash, _amount);
+        hash = keccak256(hash, _nonce);
         address from = recoverAddress(hash, _sign);
 
         if (_nonce == nonces[from] && approveInternal(from, _spender, _amount)) {
@@ -114,16 +114,16 @@ contract TokenSample is TokenInterface {
         return true;
     }
 
-    function allowance(address _owner, address _spender) constant returns (uint remaining) {
+    function allowance(address _owner, address _spender) public constant returns (uint remaining) {
         return allowed[_owner][_spender];
     }
 
-    function calcEnvHash(bytes32 _functionName) constant returns (bytes32 hash) {
-        hash = sha3(this);
-        hash = sha3(hash, _functionName);
+    function calcEnvHash(bytes32 _functionName) private constant returns (bytes32 hash) {
+        hash = keccak256(this);
+        hash = keccak256(hash, _functionName);
     }
 
-    function recoverAddress(bytes32 _hash, bytes _sign) constant returns (address recoverdAddr) {
+    function recoverAddress(bytes32 _hash, bytes _sign) private constant returns (address recoverdAddr) {
         bytes32 r;
         bytes32 s;
         uint8 v;

@@ -1,5 +1,5 @@
-const TokenTrader = artifacts.require('./TokenTrader.sol');
+const TokenTraderWithERC721 = artifacts.require('./TokenTraderWithERC721.sol');
 
 module.exports = function(deployer) {
-    deployer.deploy(TokenTrader);
+    deployer.deploy(TokenTraderWithERC721);
 }

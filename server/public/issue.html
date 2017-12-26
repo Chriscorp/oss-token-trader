@@ -113,8 +113,18 @@
                 </div>
             </div>
         </div>
+        <div class="row centered  bottom-space-form" id="erc721-list-area" style="display:none;">
+            <div class="table-center list-table" id="erc721-list">
+                <div class="row">
+                    <div class="title" demo-msg="common.caption.token.symbol"></div>
+                    <div class="title" demo-msg="common.caption.token.name"></div>
+                    <div class="title" demo-msg="common.caption.balance.title"></div>
+                    <div class="title" demo-msg="issue.form.send-erc721.title"></div>
+                </div>
+            </div>
+        </div>
 
-        <div class="row centered">
+        <div class="row centered" style="padding: 15px;">
             <div class="form-msg" demo-msg="issue.form.create-token.description"></div>
             <div class="table-center top-space input-table">
                 <div class="row">
@@ -134,6 +144,22 @@
                 <button id="button" onclick="createToken()" class="btn btn-warning btn-lg" demo-msg="issue.form.create-token.submit"></button>
             </div>
         </div>
+        <div class="row centered" style="padding: 15px;">
+            <div class="form-msg" demo-msg="issue.form.create-erc721.description"></div>
+            <div class="table-center top-space input-table">
+                <div class="row">
+                    <div demo-msg="common.caption.erc721.symbol"></div>
+                    <div><input class="form-control" id="erc721-symbol" maxlength="5" placeholder="EXAM"></div>
+                </div>
+                <div class="row">
+                    <div demo-msg="common.caption.erc721.name"></div>
+                    <div><input class="form-control" id="erc721-name" maxlength="32" placeholder="Example Token"></div>
+                </div>
+            </div>
+            <div class="table-center top-space input-table">
+                <button id="button" onclick="createERC721TokenContract()" class="btn btn-warning btn-lg" demo-msg="issue.form.create-erc721.submit"></button>
+            </div>
+        </div>
     </div>
 
     <div class="row centered tail-space"></div>
@@ -151,9 +177,16 @@
         <div class="row" name="token-row">
             <div name="token-symbol"></div>
             <div name="token-name"></div>
-            <div name="balance"></div>
+            <div class="inside-table">
+            <div class="row">
+                <div name="balance" style="padding: 10px;"></div>
+                <div>
+                    <button name="create-erc721-button" onclick="createERC721Token(this)" class="btn btn-warning btn-lg" demo-msg="issue.form.create-one-token.submit" style="display: none;">&nbsp;</button>
+                </div>
+            </div>
+        </div>
             <div>
-                <div class="inside-table">
+                <div id="erc20-form" class="inside-table" style="display:none;">
                     <div class="row">
                         <div>
                             <input type="hidden" name="token-address">
@@ -166,6 +199,24 @@
                         </div>
                         <div>
                             <button onclick="sendToken(this)" class="btn btn-warning btn-lg" demo-msg="issue.form.send-token.submit">&nbsp;</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="erc721-form" class="inside-table" style="display:none">
+                    <div class="row">
+                        <div>
+                            <input type="hidden" name="token-address">
+                            <select style="width: 150px;" class="form-control" name="to-address">
+                                <option value="" demo-msg="common.content.select"></option>
+                            </select>
+                        </div>
+                        <div>
+                            <select style="width: 220px;" class="form-control" name="token-id">
+                                <option value="" demo-msg="common.content.select"></option>
+                            </select>
+                        </div>
+                        <div>
+                            <button onclick="sendERC721Token(this)" class="btn btn-warning btn-lg" demo-msg="issue.form.send-token.submit">&nbsp;</button>
                         </div>
                     </div>
                 </div>

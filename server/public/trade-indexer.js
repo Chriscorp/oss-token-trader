@@ -42,6 +42,7 @@ $(document).ready(function() {
     var to = $('#token-to');
     for (var tokenAddr in tokens) {
         from.append(option(tokenAddr, tokens[tokenAddr].symbol, condition.from));
+        if (tokens[tokenAddr].erc721) continue;
         to.append(option(tokenAddr, tokens[tokenAddr].symbol, condition.to));
     }
 
@@ -75,7 +76,7 @@ var changeCondition = function() {
     var tokenFrom = $('#token-from').val();
     var tokenTo = $('#token-to').val();
 
-    LOCAL_STORAGE.setCondition({trader: trader, from: tokenFrom, to: tokenTo});
+    LOCAL_STORAGE.setCondition({ trader: trader, from: tokenFrom, to: tokenTo });
 
     if (!trader || !tokenFrom || !tokenTo || tokenFrom === tokenTo) {
         $('#token-area').css('display', 'none');
@@ -93,16 +94,42 @@ var changeCondition = function() {
     $('#sell-row-template').find('div[name="to-token-symbol"]').text(to);
 
     // get possessions
-    $('#from-token-symbol').text(from);
     $('#to-token-symbol').text(to);
 
     getPossessionData([trader], function(result) {
         var possessions = result[trader];
-        $('#from-token-you-have').text(possessions.from.balance);
-        $('#from-token-allowance-input').val(possessions.from.allowance);
-        $('#from-token-allowance').text(possessions.from.allowance);
-        $('#from-token-on-order').text(possessions.from.onorder);
-        $('#from-token-tradable').text(possessions.from.tradable);
+        if (!possessions.from.erc721) {
+            $('#amount-row').css('display', 'table-row');
+            $('#total-row').css('display', 'table-row');
+            $('#token-id-row').css('display', 'none');
+
+            $('#from-token-symbol').text(from);
+            $('#from-token-you-have').text(possessions.from.balance);
+            $('#from-token-on-order').text(possessions.from.onorder);
+            $('#from-token-allowance-input').val(possessions.from.allowance);
+            $('#from-token-allowance').text(possessions.from.allowance);
+            $('#from-token-tradable').text(possessions.from.tradable);
+
+            $('#from-erc20').css('display', 'table-row');
+            $('#from-erc721').css('display', 'none');
+        } else {
+            $('#amount-row').css('display', 'none');
+            $('#total-row').css('display', 'none');
+            $('#token-id-row').css('display', 'table-row');
+
+            $('#from-erc721-symbol').text(from);
+            $('#from-erc721-you-have').text(possessions.from.balance.join(', ') || '-');
+            $('#from-erc721-allowance').text(possessions.from.allowance.join(', ') || '-');
+            $('#from-erc721-on-order').text(possessions.from.onorder || '-');
+
+            $('#from-erc20').css('display', 'none');
+            $('#from-erc721').css('display', 'table-row');
+
+            possessions.from.balance.forEach(function(tokenId) {
+                $('#token-id').append($('<option>').val(tokenId).text(tokenId));
+            });
+        }
+
         $('#to-token-you-have').text(possessions.to.balance);
         $('#to-token-allowance-input').val(possessions.to.allowance);
         $('#to-token-allowance').text(possessions.to.allowance);
@@ -154,18 +181,36 @@ var appendSellRecord = function(trader, r) {
 
     var row = $('#sell-row-template div:first').clone(true);
     if (r.maker == trader) {
+        row.find('button[name="trade"]').css('display', 'none');
+        row.find('button[name="erc721-trade"]').css('display', 'none');
         row.find('input').prop('disabled', true);
-        row.find('button[name=trade]').css('display', 'none');
         row.find('button[name=cancel]').css('display', 'block');
     }
-    row.find('div[name="sell-price"]').text(r.price);
-    row.find('div[name="sell-remain"]').text(r.remain);
-    row.find('div[name="sell-to"]').text(r.price.times(r.remain));
-    row.find('input[name="record-id"]').val(r.recordId);
-    row.find('input[name="maker-address"]').val(r.maker);
-    row.find('input[name="price"]').val(r.price);
-    row.find('input[name="amount"]').val(r.amount);
-    row.find('input[name="remain"]').val(r.remain);
+    if (r.tokenId) {
+        row.find('div[name="sell-price"]').text(r.price);
+        row.find('div[name="sell-remain"]').text(r.tokenId);
+        row.find('div[name="sell-to"]').text(r.price);
+        row.find('input[name="record-id"]').val(r.recordId);
+        row.find('input[name="maker-address"]').val(r.maker);
+        row.find('input[name="price"]').val(r.price);
+        row.find('input[name="buy-amount"]').css('display', 'none');
+        row.find('div[name="from-token-symbol"]').css('display', 'none');
+        row.find('div[name="from-token-volume"]').css('display', 'none');
+        row.find('div[name="to-token-symbol"]').css('display', 'none');
+        row.find('div[name="to-token-volume"]').css('display', 'none');
+        row.find('button[name="trade"]').css('display', 'none');
+    } else {
+        row.find('div[name="sell-price"]').text(r.price);
+        row.find('div[name="sell-remain"]').text(r.remain);
+        row.find('div[name="sell-to"]').text(r.price.times(r.remain));
+        row.find('input[name="record-id"]').val(r.recordId);
+        row.find('input[name="maker-address"]').val(r.maker);
+        row.find('input[name="price"]').val(r.price);
+        row.find('input[name="amount"]').val(r.amount);
+        row.find('input[name="remain"]').val(r.remain);
+        row.find('button[name="erc721-trade"]').css('display', 'none');
+    }
+
     $('#board').append(row);
 };
 
@@ -186,7 +231,7 @@ var removeRecord = function(recordId) {
     if (!board) board = [];
     board.forEach(function(record, idx, b) {
         if (record.recordId == recordId) {
-            b.splice(idx,1);
+            b.splice(idx, 1);
             return true;
         }
     });
@@ -232,6 +277,24 @@ var allowance = function(fromTo) {
             $(this).dialog("close");
             if (!DEMO_UTIL.startLoad()) return;
             allowanceSign(tokenAddress, amount);
+        }
+    );
+};
+var erc721Allowance = function() {
+    if (DEMO_UTIL.isLoading()) return;
+
+    DEMO_UTIL.inputDialog(
+        demoMsg('trade.form.set-allowance.title'),
+        $('#from-erc721-allowance-input').val(),
+        function() {
+            var tokenAddress = $('#token-from').val();
+
+            var tokenId = toBigNumberById('#dialog-input');
+
+            // goto trade-trader.js
+            $(this).dialog("close");
+            if (!DEMO_UTIL.startLoad()) return;
+            erc721AllowanceSign(tokenAddress, tokenId);
         }
     );
 };
@@ -289,9 +352,9 @@ var blurTotal = function() {
 };
 var getSellValues = function() {
     return {
-        price:toBigNumberById('#price'),
-        amount:toBigNumberById('#amount'),
-        total:toBigNumberById('#total')
+        price: toBigNumberById('#price'),
+        amount: toBigNumberById('#amount'),
+        total: toBigNumberById('#total')
     };
 };
 var toBigNumberById = function(id) {
@@ -311,56 +374,75 @@ var sell = function() {
     if (!DEMO_UTIL.startLoad()) return;
 
     var tokenFrom = $('#token-from').val();
+    var erc721 = LOCAL_STORAGE.getTokens()[tokenFrom].erc721;
+
     var tokenTo = $('#token-to').val();
     var price = $('#price').val().trim();
-    var amount = $('#amount').val().trim();
 
-    // very rough validation for demo
-    if (price == "" || amount == "") {
-        DEMO_UTIL.okDialog(
-            demoMsg('trade.dialog.err-required.title'),
-            demoMsg('trade.dialog.err-required.msg')
-        );
-        return DEMO_UTIL.stopLoad();
+    if (erc721) {
+        var tokenId = $('#token-id').val().trim();
+        // very rough validation for demo
+        if (price == "" || tokenId == "") {
+            DEMO_UTIL.okDialog(
+                demoMsg('trade.dialog.err-required.title'),
+                demoMsg('trade.dialog.err-required.msg')
+            );
+            return DEMO_UTIL.stopLoad();
+        }
+        var priceNum = toBigNumber(price);
+        if (!(priceNum.isFinite() && priceNum.gt(0))) {
+            DEMO_UTIL.okDialog(
+                demoMsg('trade.dialog.err-not-number.title'),
+                demoMsg('trade.dialog.err-not-number.msg')
+            );
+            return DEMO_UTIL.stopLoad();
+        }
+        sellERC721Sell(tokenFrom, tokenTo, price, tokenId);
+    } else {
+        var amount = $('#amount').val().trim();
+        // very rough validation for demo
+        if (price == "" || amount == "") {
+            DEMO_UTIL.okDialog(
+                demoMsg('trade.dialog.err-required.title'),
+                demoMsg('trade.dialog.err-required.msg')
+            );
+            return DEMO_UTIL.stopLoad();
+        }
+        var priceNum = toBigNumber(price);
+        var amountNum = toBigNumber(amount);
+        if (!(priceNum.isFinite() && amountNum.isFinite() && priceNum.gt(0) && amountNum.gt(0))) {
+            DEMO_UTIL.okDialog(
+                demoMsg('trade.dialog.err-not-number.title'),
+                demoMsg('trade.dialog.err-not-number.msg')
+            );
+            return DEMO_UTIL.stopLoad();
+        }
+        if (!(amountNum.isInt())) {
+            DEMO_UTIL.okDialog(
+                demoMsg('trade.dialog.err-not-int.title'),
+                demoMsg('trade.dialog.err-not-int.msg')
+            );
+            return DEMO_UTIL.stopLoad();
+        }
+        sellSign(tokenFrom, tokenTo, price, amount);
     }
-    var priceNum = toBigNumber(price);
-    var amountNum = toBigNumber(amount);
-    if (!(priceNum.isFinite() && amountNum.isFinite() && priceNum.gt(0) && amountNum.gt(0))) {
-        DEMO_UTIL.okDialog(
-            demoMsg('trade.dialog.err-not-number.title'),
-            demoMsg('trade.dialog.err-not-number.msg')
-        );
-        return DEMO_UTIL.stopLoad();
-    }
-    if (!(amountNum.isInt())) {
-        DEMO_UTIL.okDialog(
-            demoMsg('trade.dialog.err-not-int.title'),
-            demoMsg('trade.dialog.err-not-int.msg')
-        );
-        return DEMO_UTIL.stopLoad();
-    }
-
-    // The indexer should record the maker's contact information (address, ip ...) at or before this timing.
-    // For demonstration, it is completed by function call.
-
-    // to trade-trader.js
-    sellSign(tokenFrom, tokenTo, price, amount);
 };
 
 // callback from maker (trade-trader.js)
-var sellSignAccept = function(tokenFrom, tokenTo, price, amount, sign) {
+var sellSignAccept = function(tokenFrom, tokenTo, price, val, sign) {
+
+    var erc721 = LOCAL_STORAGE.getTokens()[tokenFrom].erc721;
 
     // check and get maker's sign
     var hash = ethClient.utils.hashBySolidityType(
-        ['address', 'address', 'uint', 'uint'],
-        [tokenFrom, tokenTo, price, amount]
+        ['address', 'address', 'uint', 'uint'], [tokenFrom, tokenTo, price, val]
     );
     var traderAddress = ethClient.utils.recoverAddress(hash, sign);
     console.log(traderAddress);
 
     // check trader's allowance
     getPossessionTokenData(traderAddress, tokenFrom, function(token) {
-        if (new BigNumber(amount).gt(new BigNumber(token.tradable))){
+        if (!erc721 && new BigNumber(val).gt(new BigNumber(token.tradable))) {
             DEMO_UTIL.okDialog(
                 demoMsg('trade.dialog.err-tradable-shortage.title'),
                 demoMsg('trade.dialog.err-tradable-shortage.msg')
@@ -371,12 +453,14 @@ var sellSignAccept = function(tokenFrom, tokenTo, price, amount, sign) {
         var board = LOCAL_STORAGE.getBoard();
         if (!board) board = [];
         var recordId = LOCAL_STORAGE.getBoardNextId();
-        board.push({recordId:recordId, time:Date.now(), maker:traderAddress, from:tokenFrom, to:tokenTo, price:price, amount:amount, remain:amount});
+        if (erc721) board.push({ recordId: recordId, time: Date.now(), maker: traderAddress, from: tokenFrom, to: tokenTo, price: price, tokenId: val });
+        else board.push({ recordId: recordId, time: Date.now(), maker: traderAddress, from: tokenFrom, to: tokenTo, price: price, amount: val, remain: val });
         LOCAL_STORAGE.setBoard(board);
 
 
         $('#price').val("");
         $('#amount').val("");
+        $('#token-id').val("");
         $('#total').val("");
         changeCondition();
 
@@ -420,6 +504,7 @@ var trade = function(button) {
     var row = $(button.closest('div[name="sell-row"]'));
     var recordId = parseInt(row.find('input[name="record-id"]').val());
     var amount = toBigNumber(row.find('input[name="buy-amount"]').val().trim());
+    console.log(amount);
     if (!amount.isFinite() || amount.lte(0)) {
         DEMO_UTIL.okDialog(
             demoMsg('trade.dialog.err-not-number.title'),
@@ -459,7 +544,7 @@ var trade = function(button) {
         var balance = new BigNumber(token.balance);
         var allowance = new BigNumber(token.allowance);
         var sellLimit = (allowance.lt(balance)) ? allowance : balance;
-        if (new BigNumber(_makerAmount).gt(sellLimit)){
+        if (new BigNumber(_makerAmount).gt(sellLimit)) {
             DEMO_UTIL.okDialog(
                 demoMsg('trade.dialog.err-tradable-maker-shortage.title'),
                 demoMsg('trade.dialog.err-tradable-maker-shortage.msg')
@@ -473,19 +558,55 @@ var trade = function(button) {
     });
 };
 
+var erc721Trade = function(button) {
+    if (DEMO_UTIL.isLoading()) return;
+    if (!DEMO_UTIL.startLoad()) return;
+
+    // very rough validation (just for DEMO)
+    var row = $(button.closest('div[name="sell-row"]'));
+    var recordId = parseInt(row.find('input[name="record-id"]').val());
+
+    // Actually this should check more and more.
+    //TODO if not demo
+
+    var _price = row.find('input[name="price"]').val();
+
+    var _makerAddress = row.find('input[name="maker-address"]').val();
+    var _makerTokenAddr = $('#token-from').val();
+    var _makerTokenId = row.find('div[name="sell-remain"]').text();
+    var _takerTokenAddr = $('#token-to').val();
+    var _takerAmount = _price.toString();
+
+    // check maker's allowance
+    getPossessionTokenData(_makerAddress, _makerTokenAddr, function(token) {
+        var allowance = token.allowance;
+        if (allowance.indexOf(_makerTokenId) < 0) {
+            DEMO_UTIL.okDialog(
+                demoMsg('trade.dialog.err-tradable-maker-shortage.title'),
+                demoMsg('trade.dialog.err-tradable-maker-shortage.msg')
+            );
+            removeRecord(recordId);
+            return DEMO_UTIL.stopLoad();
+        }
+
+        // goto trade-trader.js
+        erc721TradeTakerSign(recordId, _makerAddress, _makerTokenAddr, _makerTokenId, _takerTokenAddr, _takerAmount);
+    });
+};
+
+
 // callback from trade-trader.js
-var tradeTakerSignAccept = function (recordId, makerTokenAddr, makerAmount, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce, takerSign) {
+var tradeTakerSignAccept = function(recordId, makerTokenAddr, makerAmount, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce, takerSign) {
 
     var hash = ethClient.utils.hashBySolidityType(
-        ['address', 'bytes32', 'address', 'uint', 'address', 'address', 'uint', 'uint', 'uint'],
-        [TOKEN_TRADER_ADDRESS, 'trade', makerTokenAddr, makerAmount, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce]
+        ['address', 'bytes32', 'address', 'uint', 'address', 'address', 'uint', 'uint', 'uint'], [TOKEN_TRADER_ADDRESS, 'trade', makerTokenAddr, makerAmount, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce]
     );
     var takerAddress = ethClient.utils.recoverAddress(hash, takerSign);
     console.log(takerAddress);
 
     // check taker's allowance
     getPossessionTokenData(takerAddress, takerTokenAddr, function(token) {
-        if (new BigNumber(takerAmount).gt(new BigNumber(token.tradable))){
+        if (new BigNumber(takerAmount).gt(new BigNumber(token.tradable))) {
             DEMO_UTIL.okDialog(
                 demoMsg('trade.dialog.err-tradable-taker-shortage.title'),
                 demoMsg('trade.dialog.err-tradable-taker-shortage.msg')
@@ -498,8 +619,23 @@ var tradeTakerSignAccept = function (recordId, makerTokenAddr, makerAmount, make
     });
 };
 
+var erc721TradeTakerSignAccept = function(recordId, makerTokenAddr, makerTokenId, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce, takerSign) {
+
+    var hash = ethClient.utils.hashBySolidityType(
+        ['address', 'bytes32', 'address', 'uint', 'address', 'address', 'uint', 'uint', 'uint'], [TOKEN_TRADER_ADDRESS, 'trade', makerTokenAddr, makerTokenId, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce]
+    );
+    var takerAddress = ethClient.utils.recoverAddress(hash, takerSign);
+    console.log(takerAddress);
+
+    // check taker's allowance
+    getPossessionTokenData(takerAddress, takerTokenAddr, function(token) {
+        // goto trade-trader.js again
+        erc721TradeMakerSign(recordId, makerTokenAddr, makerTokenId, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce, takerSign);
+    });
+};
+
 // callback again from trade-trader.js
-var tradeMakerSignAccept = function (recordId, makerTokenAddr, makerAmount, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce, takerSign, makerSign) {
+var tradeMakerSignAccept = function(recordId, makerTokenAddr, makerAmount, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce, takerSign, makerSign) {
 
     // If necessary, Indexer checks the values.
 
@@ -507,8 +643,7 @@ var tradeMakerSignAccept = function (recordId, makerTokenAddr, makerAmount, make
     var contract = ETH_UTIL.getContract(indexerAccount);
 
     contract.sendTransaction(
-        '', 'SwapTrade', 'trade',
-        [TOKEN_TRADER_ADDRESS, makerTokenAddr, makerAmount, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce, takerSign, makerSign],
+        '', 'SwapTrade', 'trade', [TOKEN_TRADER_ADDRESS, makerTokenAddr, makerAmount, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce, takerSign, makerSign],
         SWAP_TRADE_ABI,
         function(err, res) {
             if (err) {
@@ -526,7 +661,7 @@ var tradeMakerSignAccept = function (recordId, makerTokenAddr, makerAmount, make
                 if (record.recordId == recordId) {
                     var remain = new BigNumber(record.remain).minus(new BigNumber(makerAmount));
                     if (remain.lte(new BigNumber(0))) {
-                        b.splice(idx,1);
+                        b.splice(idx, 1);
                     } else {
                         record.remain = remain.toString();
                     }
@@ -548,6 +683,50 @@ var tradeMakerSignAccept = function (recordId, makerTokenAddr, makerAmount, make
     );
 };
 
+var erc721TradeMakerSignAccept = function(recordId, makerTokenAddr, makerTokenId, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce, takerSign, makerSign) {
+
+    // If necessary, Indexer checks the values.
+
+    var indexerAccount = LOCAL_STORAGE.getIndexerAccount();
+    var contract = ETH_UTIL.getContract(indexerAccount);
+
+    contract.sendTransaction(
+        '', 'SwapTrade', 'tradeERC721', [TOKEN_TRADER_ADDRESS, makerTokenAddr, makerTokenId, makerAddress, takerTokenAddr, takerAmount, expiration, tradeNonce, takerSign, makerSign],
+        SWAP_TRADE_ABI,
+        function(err, res) {
+            if (err) {
+                console.error(err);
+                DEMO_UTIL.okDialog(
+                    demoMsg('trade.dialog.err-trade.title'),
+                    demoMsg('trade.dialog.err-trade.msg')
+                );
+                return DEMO_UTIL.stopLoad();
+            }
+
+            // update remain
+            var board = LOCAL_STORAGE.getBoard();
+            if (!board) board = [];
+            board.forEach(function(record, idx, b) {
+                if (record.recordId == recordId) {
+                    removeRecord(recordId);
+                }
+            });
+            LOCAL_STORAGE.setBoard(board);
+
+            DEMO_UTIL.okDialog(
+                demoMsg('trade.dialog.trade-complete.title'),
+                demoMsg('trade.dialog.trade-complete.msg'),
+                function() {
+                    changeCondition();
+                    $(this).dialog("close");
+                }
+            );
+            return DEMO_UTIL.stopLoad();
+        }
+    );
+};
+
+
 // --- calc
 
 var calcOnOrder = function(traderAddress, tokenAddress) {
@@ -561,6 +740,18 @@ var calcOnOrder = function(traderAddress, tokenAddress) {
     });
     return sum;
 };
+
+var calcOnOrderInERC721 = function(traderAddress, tokenAddress) {
+    var board = LOCAL_STORAGE.getBoard();
+    if (!board) return '-';
+    var result = [];
+    board.forEach(function(record, idx, b) {
+        if (traderAddress == record.maker && tokenAddress == record.from) {
+            result.push(record.tokenId);
+        }
+    });
+    return result;
+}
 
 var calcTradable = function(token) {
     var balance = new BigNumber(token.balance);
@@ -595,35 +786,58 @@ var getPossessionDataLoop = function(result, idx, traderAddresses, tokenFrom, to
 };
 
 var getPossessionTokenData = function(traderAddress, tokenAddress, callback) {
-
     var contract = ETH_UTIL.getContract(LOCAL_STORAGE.getIndexerAccount());
+    var tokens = LOCAL_STORAGE.getTokens();
+    var erc721 = tokens[tokenAddress].erc721;
+
+    var balanceFuncName = erc721 ? 'getERC721Tokens' : 'getBalance';
 
     var result = {};
-    contract.call('', 'SwapTrade', 'getBalance', [tokenAddress, traderAddress], SWAP_TRADE_ABI,
+    contract.call('', 'SwapTrade', balanceFuncName, [tokenAddress, traderAddress], SWAP_TRADE_ABI,
         function(err, res) {
             if (err) {
                 console.error(err);
                 alert('Failed to get Token balance information.');
                 return;
             }
-            console.log(res);
-            result.balance = res.toString(10);
+            console.log(res[0]);
+            if (erc721) {
+                result.erc721 = 1;
+                result.balance = res[0].map(function(t) { return t.toString(10); });
+                result.allowance = [];
+                if (result.balance.length === 0) return callback(result);
 
-           contract.call('', 'SwapTrade', 'getAllowance', [tokenAddress, traderAddress, TOKEN_TRADER_ADDRESS], SWAP_TRADE_ABI,
-               function(err, res) {
-                   if (err) {
-                       console.error(err);
-                       alert('Failed to get Token allowance information.');
-                       return;
-                   }
+                contract.call('', 'SwapTrade', 'getERC721TokenApprovees', [tokenAddress, result.balance], SWAP_TRADE_ABI, function(err, res) {
+                    if (err) {
+                        console.error(err);
+                        alert('Failed to get Token allowance information.');
+                        return;
+                    }
+                    console.log(res[0]);
+                    res[0].forEach(function(t, i) {
+                        if (t === TOKEN_TRADER_ADDRESS) result.allowance.push(result.balance[i]);
+                    });
+                    callback(result);
+                });
+            } else {
+                result.balance = res[0].toString(10);
 
-                   console.log(res);
-                   result.allowance = res.toString(10);
-                   result.onorder = calcOnOrder(traderAddress, tokenAddress).toString();
-                   result.tradable = calcTradable(result);
-                   callback(result);
-               }
-           );
+                contract.call('', 'SwapTrade', 'getAllowance', [tokenAddress, traderAddress, TOKEN_TRADER_ADDRESS], SWAP_TRADE_ABI,
+                    function(err, res) {
+                        if (err) {
+                            console.error(err);
+                            alert('Failed to get Token allowance information.');
+                            return;
+                        }
+
+                        console.log(res);
+                        result.allowance = res[0].toString(10);
+                        result.onorder = calcOnOrder(traderAddress, tokenAddress).toString()
+                        result.tradable = calcTradable(result);
+                        callback(result);
+                    }
+                );
+            }
         }
     );
 };

@@ -1,5 +1,5 @@
 var ETH_UTIL = {};
-var BASE_URL = 'https://beta.blockchain.z.com';
+var BASE_URL = 'https://stg.zcom.thing-chain.site/';
 
 /** Create client Key on this browse. and save to local storage (for demo). */
 ETH_UTIL.generateNewAccount = function (callback) {
